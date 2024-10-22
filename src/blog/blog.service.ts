@@ -7,6 +7,7 @@ import { CreateBlogDto } from "./dto/create.dto";
 import { UpdateBlogDto } from "./dto/update.dto";
 import { isMongoId } from "class-validator";
 import { ISearch } from "./interfaces/blog.interface";
+import { log } from "console";
 
 @Injectable()
 export class BlogService {
@@ -32,12 +33,12 @@ export class BlogService {
     let match = {};
     if (query.search) {
       match["$or"] = [
-        { title: { $regex: query.search, $options: "gi" } },
-        { content: { $regex: query.search, $options: "gi" } },
+        { title: { $regex: new RegExp(query.search, "gi") } },
+        { content: { $regex: new RegExp(query.search, "gi") } },
       ];
     }
     if (query.category) {
-      match["category"] = { $regex: query.category, $options: "gi" };
+      match["category"] = { $regex: new RegExp(query.category, "gi") };
     }
     const blogs = await this.blogModel.aggregate([
       {

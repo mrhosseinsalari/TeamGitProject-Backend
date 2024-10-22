@@ -49,8 +49,8 @@ export class BlogController {
   @ApiQuery({ name: "search", type: "string", required: false })
   @ApiQuery({ name: "category", type: "string", required: false })
   async findAll(
-    @Query("search") search: string,
-    @Query("category") category: string
+    @Query("search") search: string = "",
+    @Query("category") category: string = ""
   ): Promise<{ blogs: Blog[] }> {
     const blogs = await this.blogService.findAll({ search, category });
     return { blogs };
