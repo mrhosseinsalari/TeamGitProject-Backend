@@ -1,4 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { Blog, BlogDocument } from "./schema/blog.schema";
 import { Model, Types } from "mongoose";
 import { CategoryService } from "src/category/category.service";
@@ -63,7 +67,8 @@ export class BlogService {
   }
 
   async findOne(id: string) {
-    const blog = await this.blogModel.aggregate([
+    if (!isMongoId(id)) throw new BadRequestException("blog id is invalid");
+    const [blog] = await this.blogModel.aggregate([
       {
         $lookup: {
           from: "categories",
@@ -78,20 +83,27 @@ export class BlogService {
           category: "$category.name",
         },
       },
+      {
+        $match: { _id: new Types.ObjectId(id) },
+      },
     ]);
 
-    return blog?.[0];
+    if (!blog) throw new NotFoundException("not found blog");
+    return blog;
   }
 
   async update(id: string, blog: UpdateBlogDto): Promise<Blog> {
     if (blog.category && isMongoId(blog.category)) {
       const category = await this.CategoryService.findById(blog.category);
-      blog.category = category._id;
+      blog.category = category._id.toString();
     }
     return await this.blogModel.findByIdAndUpdate(id, blog);
   }
 
   async delete(id: string): Promise<any> {
-    return await this.blogModel.findByIdAndRemove(id);
+    if (!isMongoId(id)) throw new BadRequestException("blog id is invalid");
+    const blog = await this.blogModel.findById(id);
+    if (!blog) throw new NotFoundException("not found blog");
+    await this.blogModel.deleteOne({ _id: id });
   }
 }
